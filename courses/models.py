@@ -7,7 +7,7 @@ class Course(models.Model):
     name = models.CharField(max_length=255, verbose_name='Название')
     description = models.TextField(verbose_name='Описание')
     members = models.ManyToManyField(CustomUser, blank=True, related_name='courses', verbose_name='Участники')
-    mentor = CurrentUserField(on_delete=models.CASCADE, verbose_name='Автор проекта')
+    teacher = CurrentUserField(on_delete=models.CASCADE, verbose_name='Автор проекта')
     time = models.TextField(verbose_name='График')
     category = models.CharField(max_length=255, verbose_name='Категория')
 
@@ -23,3 +23,14 @@ class Application(models.Model):
     class Meta:
         verbose_name = 'Заявка'
         verbose_name_plural = 'Заявки'
+
+
+class Homework(models.Model):
+    teacher = CurrentUserField(on_delete=models.CASCADE, verbose_name='Учитель')
+    course = models.ForeignKey('Course', on_delete=models.CASCADE, related_name='homeworks', verbose_name='Курс')
+    text = models.TextField(verbose_name='Текст')
+    time = models.CharField(max_length=255, verbose_name='Время выполнения')
+
+    class Meta:
+        verbose_name = 'Домашняя работа'
+        verbose_name_plural = 'Домашние работы'

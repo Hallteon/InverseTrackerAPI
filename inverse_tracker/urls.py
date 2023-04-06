@@ -16,18 +16,21 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, re_path, include
-from courses.views import CourseListCreateAPIView, CourseAPIDetailView, ApplicationAPIConfirmView, ApplicationAPICreate, \
-    ApplicationAPIList, ApplicationAPIRejectView
+from courses.views import CourseAPIListCreateView, CourseAPIDetailView, ApplicationAPIConfirmView, ApplicationAPICreate, \
+    ApplicationAPIList, ApplicationAPIRejectView, HomeworkAPICreateView, HomeworkAPIListView, HomeworkAPIDetailView
 from users.views import ClassAPIView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/courses/', CourseListCreateAPIView.as_view()),
+    path('api/courses/', CourseAPIListCreateView.as_view()),
     path('api/courses/<int:pk>/', CourseAPIDetailView.as_view()),
-    path('api/courses/applications/', ApplicationAPICreate.as_view()),
-    path('api/courses/applications/<int:pk>/', ApplicationAPIList.as_view()),
+    path('api/courses/applications/send/', ApplicationAPICreate.as_view()),
+    path('api/courses/applications/course/<int:pk>/', ApplicationAPIList.as_view()),
     path('api/courses/applications/confirm/<int:pk>/', ApplicationAPIConfirmView.as_view()),
     path('api/courses/applications/reject/<int:pk>/', ApplicationAPIRejectView.as_view()),
+    path('api/courses/homeworks/create/', HomeworkAPICreateView.as_view()),
+    path('api/courses/homeworks/course/<int:pk>/', HomeworkAPIListView.as_view()),
+    path('api/courses/homeworks/<int:pk>/', HomeworkAPIDetailView.as_view()),
     path('api/classes/', ClassAPIView.as_view()),
     path('api/users/auth/', include('djoser.urls')),
     re_path(r'^api/users/auth/', include('djoser.urls.authtoken')),

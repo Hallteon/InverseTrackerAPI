@@ -157,6 +157,11 @@ DJOSER = {
         'current_user': 'users.serializers.CustomUserSerializer',
         'user_create': 'users.serializers.UserRegistrationSerializer',
     },
+
+    'PERMISSIONS': {
+        'user_create': ['users.permissions.IsTeacherOrAdmin'],
+        'user_list': ['users.permissions.IsTeacherOrAdmin'],
+    }
 }
 
 CORS_ORIGIN_ALLOW_ALL = True

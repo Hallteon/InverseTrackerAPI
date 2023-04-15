@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +26,7 @@ SECRET_KEY = 'django-insecure-*k4(uwu$o3_d89!&xmahp06jbs&+=_cuw4*5@3031qyaea*q01
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['inverse-tracker.ru']
 
 
 # Application definition
@@ -42,7 +43,8 @@ INSTALLED_APPS = [
     'djoser',
     'corsheaders',
     'users.apps.UsersConfig',
-    'courses.apps.CoursesConfig'
+    'courses.apps.CoursesConfig',
+    'news.apps.NewsConfig'
 ]
 
 MIDDLEWARE = [
@@ -84,11 +86,16 @@ WSGI_APPLICATION = 'inverse_tracker.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'belogugx_dj3',
+        'USER': 'belogugx_dj3',
+        'PASSWORD': 'EnKA&k^%m',
+        'HOST': 'localhost',
+        'PORT': '3306',
+        'OPTIONS': {
+         "init_command": "SET foreign_key_checks = 0;"},
+	},
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
@@ -131,6 +138,9 @@ STATIC_ROOT = 'static/'
 STATICFILES_STORAGE='whitenoise.storage.CompressedManifestStaticFilesStorage'
 STATICFILES_DIRS = []
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -148,7 +158,15 @@ REST_FRAMEWORK = {
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication'
-    ]
+    ],
+
+    'DATE_INPUT_FORMATS': [
+        '%d-%m-%Y'
+    ],
+
+    'TIME_IMPUT_FORMATS': [
+        '%H:%M'
+    ],
 }
 
 DJOSER = {

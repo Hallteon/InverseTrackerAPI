@@ -16,22 +16,39 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, re_path, include
-from courses.views import CourseAPIListCreateView, CourseAPIDetailView, ApplicationAPIConfirmView, ApplicationAPICreate, \
-    ApplicationAPIList, ApplicationAPIRejectView, HomeworkAPICreateView, HomeworkAPIListView, HomeworkAPIDetailView
-from users.views import ClassAPIView
+from django.conf.urls import url
+from courses.views import *
+from users.views import *
+from news.views import NewAPIListCreateView, NewAPIDetailView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/courses/', CourseAPIListCreateView.as_view()),
+    path('api/courses/category/<int:pk>/', CourseAPICategoryListView.as_view()),
     path('api/courses/<int:pk>/', CourseAPIDetailView.as_view()),
-    path('api/courses/applications/send/', ApplicationAPICreate.as_view()),
-    path('api/courses/applications/course/<int:pk>/', ApplicationAPIList.as_view()),
-    path('api/courses/applications/confirm/<int:pk>/', ApplicationAPIConfirmView.as_view()),
-    path('api/courses/applications/reject/<int:pk>/', ApplicationAPIRejectView.as_view()),
-    path('api/courses/homeworks/create/', HomeworkAPICreateView.as_view()),
-    path('api/courses/homeworks/course/<int:pk>/', HomeworkAPIListView.as_view()),
-    path('api/courses/homeworks/<int:pk>/', HomeworkAPIDetailView.as_view()),
-    path('api/classes/', ClassAPIView.as_view()),
+    path('api/courses/categories/', CategoryAPIListCreateView.as_view()),
+    path('api/courses/categories/<int:pk>/', CategoryAPIDetailView.as_view()),
+    path('api/courses/groups/<int:pk>/applications/send/', ApplicationAPICreateView.as_view()),
+    path('api/courses/groups/<int:pk>/applications/', ApplicationAPIListView.as_view()),
+    path('api/courses/groups/<int:group_pk>/applications/confirm/<int:pk>/', ApplicationAPIConfirmView.as_view()),
+    path('api/courses/groups/<int:group_pk>/applications/reject/<int:pk>/', ApplicationAPIRejectView.as_view()),
+    path('api/courses/<int:pk>/groups/create/', GroupAPICreateView.as_view()),
+    path('api/courses/groups/<int:pk>/', GroupAPIDetailView.as_view()),
+    path('api/courses/groups/<int:pk>/schedules/create/', ScheduleAPICreateView.as_view()),
+    path('api/courses/groups/schedules/<int:pk/', ScheduleAPIDetailView.as_view()),
+    path('api/courses/groups/<int:pk>/lessons/create/', LessonAPICreateView.as_view()),
+    path('api/courses/groups/lessons/<int:pk>/attendings/', LessonAPIAddAttending.as_view()),
+    path('api/courses/groups/lessons/<int:pk>/', LessonAPIDetailView.as_view()),
+    path('api/courses/groups/lessons/<int:pk>/homeworks/create/', HomeworkAPICreateView.as_view()),
+    path('api/courses/groups/lessons/homeworks/<int:pk>/passed/', HomeworkAPIAddPassed.as_view()),
+    path('api/courses/groups/lessons/homeworks/<int:pk>/', HomeworkAPIDetailView.as_view()),
+    path('api/news/', NewAPIListCreateView.as_view()),
+    path('api/news/<int:pk>/', NewAPIDetailView.as_view()),
     path('api/users/auth/', include('djoser.urls')),
+    path('api/users/me/groups/', GroupAPIMeListView.as_view()),
+    path('api/users/me/skips/', LessonAPISkipsListView.as_view()),
+    path('api/users/me/doubts/', HomeworkAPIDoubtsListView.as_view()),
+    path('api/users/me/teacher/courses/', CourseAPIMeTeacherListView.as_view()),
+    path('api/users/me/student/courses/', CourseAPIMeStudentListView.as_view()),
     re_path(r'^api/users/auth/', include('djoser.urls.authtoken')),
 ]

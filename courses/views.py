@@ -1,10 +1,12 @@
 from rest_framework import generics, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from courses.models import Course, Application, Homework
-from courses.permissions import IsTeacherOrAdminOrReadOnly, IsStudent
-from courses.serializers import CourseSerializer, ApplicationSerializer, HomeworkSerializer
-from users.permissions import IsTeacherOrAdmin
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import FileUploadParser
+from courses.models import Course, Application, Homework, Lesson, Group, Schedule, Category
+from courses.serializers import CourseSerializer, ApplicationSerializer, HomeworkSerializer, LessonSerializer, GroupSerializer, ScheduleSerializer, CategorySerializer
+from users.permissions import IsTeacherOrAdmin, IsAdminOrReadOnly, IsTeacherOrAdminOrReadOnly, IsStudent
+from inverse_tracker.settings import BASE_DIR
 
 
 class CourseAPIListCreateView(generics.ListCreateAPIView):
@@ -13,61 +15,264 @@ class CourseAPIListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsTeacherOrAdminOrReadOnly]
 
 
+class CourseAPICategoryListView(generics.ListAPIView):
+    serializer_class = CourseSerializer
+    permission_classes = [IsTeacherOrAdminOrReadOnly]
+
+    def get_queryset(self, *args, **kwargs):
+        return Course.objects.filter(category=self.kwargs['pk'])
+
+
 class CourseAPIDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     permission_classes = [IsTeacherOrAdminOrReadOnly]
 
 
-class ApplicationAPICreate(generics.CreateAPIView):
+class ApplicationAPICreateView(generics.CreateAPIView):
     queryset = Application.objects.all()
     serializer_class = ApplicationSerializer
-    permission_classes = [IsAuthenticated, IsStudent]
+    permission_classes = [IsStudent]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ApplicationSerializer(data=request.data)
+
+        if serializer.is_valid():
+            group = Group.objects.get(pk=self.kwargs['pk'])
+
+            if group.applications.filter(student=self.request.user.pk, status=2).exists() == False:
+                serializer.save()
+                group.applications.add(int(serializer.data['id']))
+                group.save()
+
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            
+            else:
+                return Response({'error': 'Вы уже отправили заявку в эту группу!'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class ApplicationAPIList(generics.ListAPIView):
+class ApplicationAPIListView(generics.ListAPIView):
     serializer_class = ApplicationSerializer
-    permission_classes = [IsAuthenticated, IsTeacherOrAdminOrReadOnly]
+    permission_classes = [IsTeacherOrAdminOrReadOnly]
 
     def get_queryset(self):
-        return Application.objects.filter(course=self.kwargs['pk'])
+        return Group.objects.get(pk=self.kwargs['pk']).applications
 
 
-class ApplicationAPIConfirmView(generics.DestroyAPIView):
+class ApplicationAPIConfirmView(generics.UpdateAPIView):
     queryset = Application.objects.all()
     serializer_class = ApplicationSerializer
-    permission_classes = [IsAuthenticated, IsTeacherOrAdmin]
+    permission_classes = [IsTeacherOrAdmin]
 
-    def destroy(self, request, *args, **kwargs):
-        instance = self.get_object()
+    def update(self, request, *args, **kwargs):
+        obj = self.get_object()
+        group = Group.objects.get(pk=self.kwargs['group_pk'])
 
-        instance.course.members.add(instance.sender)
-        instance.delete()
+        if group.members.count() < int(group.limit):
+            obj.status = 2
+            group.members.add(obj.student.pk)
+            group.save()
+            obj.save()
+            
+        else:
+            group.open = False
+            group.save()
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        serializer = ApplicationSerializer(obj)
 
+        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+    
 
-class ApplicationAPIRejectView(generics.DestroyAPIView):
+class ApplicationAPIRejectView(generics.UpdateAPIView):
     queryset = Application.objects.all()
     serializer_class = ApplicationSerializer
-    permission_classes = [IsAuthenticated, IsTeacherOrAdmin]
+    permission_classes = [IsTeacherOrAdmin]
+
+    def update(self, request, *args, **kwargs):
+        obj = self.get_object()
+        obj.status = 3
+
+        obj.save()
+
+        serializer = ApplicationSerializer(obj)
+
+        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+
+
+class CategoryAPIListCreateView(generics.ListCreateAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+
+class CategoryAPIDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
+    permission_classes = [IsAdminOrReadOnly]
+
+
+class GroupAPICreateView(generics.CreateAPIView):
+    serializer_class = GroupSerializer
+    permission_classes = [IsTeacherOrAdminOrReadOnly]
+
+    def post(self, request, *args, **kwargs):
+        serializer = GroupSerializer(many=True, data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            
+            course = Course.objects.get(pk=self.kwargs['pk'])
+            course.groups.add(int(serializer.data['id']))
+            course.save()
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class GroupAPIListView(generics.ListAPIView):
+    serializer_class = GroupSerializer
+    permission_classes = [IsTeacherOrAdminOrReadOnly]
+
+    def get_queryset(self, *args, **kwargs):
+        return Course.objects.get(pk=self.kwargs['pk']).groups
+
+
+class GroupAPIDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Group.objects.all()
+    serializer_class = GroupSerializer
+    permission_classes = [IsTeacherOrAdminOrReadOnly]
+
+
+class ScheduleAPICreateView(generics.CreateAPIView):
+    serializer_class = ScheduleSerializer
+    permission_classes = [IsTeacherOrAdminOrReadOnly]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ScheduleSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+
+            group = Group.objects.get(pk=self.kwargs['pk'])
+            group.schedule.add(serializer.data['id'])
+            group.save()
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ScheduleAPIListView(generics.ListAPIView):
+    serializer_class = ScheduleSerializer
+    permission_classes = [IsTeacherOrAdminOrReadOnly]
+
+    def get_queryset(self, *args, **kwargs):
+        return Group.objects.get(pk=kwargs['pk']).schedule
+
+
+class ScheduleAPIDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Schedule.objects.all()
+    serializer_class = ScheduleSerializer
+    permission_classes = [IsTeacherOrAdminOrReadOnly]
+
+
+class LessonAPICreateView(generics.CreateAPIView):
+    serializer_class = LessonSerializer
+    permission_classes = [IsTeacherOrAdminOrReadOnly]
+
+    def post(self, request, *args, **kwargs):
+        serializer = LessonSerializer(data=request.data, required=False)
+
+        if serializer.is_valid():
+            serializer.save()
+
+            group = Group.objects.get(pk=self.kwargs['pk'])
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class LessonAPIAddAttending(generics.UpdateAPIView):
+    serializer_class = LessonSerializer
+    permission_classes = [IsTeacherOrAdmin]
+
+    def update(self, request, *args, **kwargs):
+        obj = Lesson.objects.get(pk=self.kwargs['pk'])
+        attendings = request.GET.get('attendings', None)
+        attendings_list = []
+
+        if attendings is not None:
+            for attend in attendings.split(','):
+                attendings_list.append(int(attend))
+
+        obj.attendings.add(*attendings_list)
+        obj.save()
+
+        serializer = LessonSerializer(obj, required=False)
+
+        return Response(serializer.data, status=status.HTTP_206_PARTIAL_CONTENT)
+
+
+class LessonAPIListView(generics.ListAPIView):
+    serializer_class = LessonSerializer
+    permission_classes = [IsTeacherOrAdminOrReadOnly]
+
+    def get_queryset(self):
+        return Lesson.objects.filter(group=self.kwargs['pk'])
+
+
+class LessonAPIDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Lesson.objects.all()
+    serializer_class = LessonSerializer
+    permission_classes = [IsTeacherOrAdminOrReadOnly]
 
 
 class HomeworkAPICreateView(generics.CreateAPIView):
     queryset = Homework.objects.all()
     serializer_class = HomeworkSerializer
-    permission_classes = [IsAuthenticated, IsTeacherOrAdmin]
+    permission_classes = [IsTeacherOrAdmin]
 
+    def post(self, request, *args, **kwargs):
+        serializer = HomeworkSerializer(data=request.data)
 
-class HomeworkAPIListView(generics.ListAPIView):
+        if serializer.is_valid():
+            serializer.save()
+
+            lesson = Lesson.objects.get(pk=self.kwargs['pk'])
+            lesson.homework = Homework.objects.get(pk=int(serializer.data['id']))
+            lesson.save()
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class HomeworkAPIAddPassed(generics.UpdateAPIView):
     serializer_class = HomeworkSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsTeacherOrAdmin]
 
-    def get_queryset(self):
-        return Homework.objects.filter(course=self.kwargs['pk'])
+    def update(self, request, *args, **kwargs):
+        obj = Homework.objects.get(pk=self.kwargs['pk'])
+        passeds = request.GET.get('passed', None)
+        passed_list = []
+
+        if passeds is not None:
+            for passed in passeds.split(','):
+                passed_list.append(int(passed))
+
+        obj.passed.add(*passed_list)
+        obj.save()
+
+        serializer = HomeworkSerializer(obj, required=False)
+
+        return Response(serializer.data, status=status.HTTP_206_PARTIAL_CONTENT)
 
 
 class HomeworkAPIDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Homework.objects.all()
     serializer_class = HomeworkSerializer
-    permission_classes = [IsAuthenticated, IsTeacherOrAdminOrReadOnly]
+    permission_classes = [IsTeacherOrAdminOrReadOnly]

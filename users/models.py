@@ -3,15 +3,6 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 
 
-class Class(models.Model):
-    number = models.IntegerField(verbose_name='Цифра')
-    litera = models.CharField(max_length=1, verbose_name='Литера')
-
-    class Meta:
-        verbose_name = 'Класс'
-        verbose_name_plural = 'Классы'
-
-
 class Role(models.Model):
     name = models.CharField(max_length=255, verbose_name='Название')
 
@@ -44,6 +35,7 @@ class CustomUserManager(BaseUserManager):
         extra_fields.setdefault('lastname', 'Admin')
         extra_fields.setdefault('patronymic', 'Admin')
         extra_fields.setdefault('age', 255)
+        extra_fields.setdefault('role', Role.objects.get(pk=2))
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True.')
@@ -61,7 +53,7 @@ class CustomUser(AbstractUser):
     lastname = models.CharField(max_length=255, verbose_name='Фамилия')
     patronymic = models.CharField(max_length=255, verbose_name='Отчество')
     age = models.IntegerField(verbose_name='Возраст')
-    school_class = models.ForeignKey('Class', blank=True, null=True, on_delete=models.DO_NOTHING, verbose_name='Класс')
+    school_class = models.IntegerField(verbose_name='Класс')
     role = models.ForeignKey('Role', blank=True, null=True, on_delete=models.DO_NOTHING, verbose_name='Роль')
     password = models.TextField(verbose_name='Пароль')
 

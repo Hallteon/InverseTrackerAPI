@@ -70,6 +70,14 @@
 
 <br>
 
+<li><b>api/courses/int:pk/document/</b>
+    <ul>
+        <li>GET-запрос - получить документ курса pk.</li>
+    </ul>
+</li>
+
+<br>
+
 <li><b>api/courses/category/int:pk/</b>
     <ul>
         <li>GET-запрос - получить курсы с категорией pk.</li>
@@ -121,6 +129,14 @@
 <li><b>api/courses/groups/int:group_pk/applications/reject/int:pk/</b>
     <ul>
         <li>UPDATE-запрос - отклонить заявку в группу group_pk (только для учителей и админов).</li>
+    </ul>
+</li>
+
+<br>
+
+<li><b>api/courses/groups/applications/int:pk/document/</b>
+    <ul>
+        <li>GET-запрос - получить подписанный документ из заявки pk.</li>
     </ul>
 </li>
 

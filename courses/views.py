@@ -3,39 +3,57 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import FileUploadParser
-from courses.models import Course, Application, Homework, Lesson, Group, Schedule, Category
-from courses.serializers import CourseSerializer, ApplicationSerializer, HomeworkSerializer, LessonSerializer, GroupSerializer, ScheduleSerializer, CategorySerializer
-from users.permissions import IsTeacherOrAdmin, IsAdminOrReadOnly, IsTeacherOrAdminOrReadOnly, IsStudent
+from courses.models import *
+from courses.serializers import * 
+from users.permissions import *
 from inverse_tracker.settings import BASE_DIR
 
 
-class CourseAPIListCreateView(generics.ListCreateAPIView):
+class CourseAPIListView(generics.ListAPIView):
     queryset = Course.objects.all()
-    serializer_class = CourseSerializer
+    serializer_class = CourseGetSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class CourseAPICreateView(generics.CreateAPIView):
+    queryset = Course.objects.all()
+    serializer_class = CoursePostSerializer
     permission_classes = [IsTeacherOrAdminOrReadOnly]
 
 
 class CourseAPICategoryListView(generics.ListAPIView):
-    serializer_class = CourseSerializer
+    serializer_class = CourseGetSerializer
     permission_classes = [IsTeacherOrAdminOrReadOnly]
 
     def get_queryset(self, *args, **kwargs):
         return Course.objects.filter(category=self.kwargs['pk'])
 
 
-class CourseAPIDetailView(generics.RetrieveUpdateDestroyAPIView):
+class CourseAPIUpdateDestroyView(generics.DestroyAPIView, generics.UpdateAPIView):
     queryset = Course.objects.all()
-    serializer_class = CourseSerializer
+    serializer_class = CoursePostSerializer
     permission_classes = [IsTeacherOrAdminOrReadOnly]
+
+
+class CourseAPIRetrieveView(generics.RetrieveAPIView):
+    queryset = Course.objects.all()
+    serializer_class = CourseGetSerializer
+    permission_classes = [IsTeacherOrAdminOrReadOnly]
+
+
+class CourseAPIRetrieveDocumentView(generics.RetrieveAPIView):
+    queryset = Course.objects.all()
+    serializer_class = CourseDocumentSerializer
+    permission_classes = [IsAuthenticated]
 
 
 class ApplicationAPICreateView(generics.CreateAPIView):
     queryset = Application.objects.all()
-    serializer_class = ApplicationSerializer
+    serializer_class = ApplicationPostSerializer
     permission_classes = [IsStudent]
 
     def post(self, request, *args, **kwargs):
-        serializer = ApplicationSerializer(data=request.data)
+        serializer = ApplicationPostSerializer(data=request.data)
 
         if serializer.is_valid():
             group = Group.objects.get(pk=self.kwargs['pk'])
@@ -54,16 +72,24 @@ class ApplicationAPICreateView(generics.CreateAPIView):
 
 
 class ApplicationAPIListView(generics.ListAPIView):
-    serializer_class = ApplicationSerializer
+    serializer_class = ApplicationGetSerializer
     permission_classes = [IsTeacherOrAdminOrReadOnly]
 
     def get_queryset(self):
         return Group.objects.get(pk=self.kwargs['pk']).applications
 
 
+# class ApplicationAPIMeListView(generics.ListAPIView):
+#     serializer_class = ApplicationGetSerializer
+#     permission_classes = [IsAuthenticated]
+
+#     def get_queryset(self):
+#         return Group.objects.get(pk=self.kwargs['pk']).applications
+
+
 class ApplicationAPIConfirmView(generics.UpdateAPIView):
     queryset = Application.objects.all()
-    serializer_class = ApplicationSerializer
+    serializer_class = ApplicationGetSerializer
     permission_classes = [IsTeacherOrAdmin]
 
     def update(self, request, *args, **kwargs):
@@ -80,14 +106,14 @@ class ApplicationAPIConfirmView(generics.UpdateAPIView):
             group.open = False
             group.save()
 
-        serializer = ApplicationSerializer(obj)
+        serializer = ApplicationGetSerializer(obj)
 
         return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
     
 
 class ApplicationAPIRejectView(generics.UpdateAPIView):
     queryset = Application.objects.all()
-    serializer_class = ApplicationSerializer
+    serializer_class = ApplicationGetSerializer
     permission_classes = [IsTeacherOrAdmin]
 
     def update(self, request, *args, **kwargs):
@@ -96,9 +122,15 @@ class ApplicationAPIRejectView(generics.UpdateAPIView):
 
         obj.save()
 
-        serializer = ApplicationSerializer(obj)
+        serializer = ApplicationGetSerializer(obj)
 
         return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+
+
+class ApplicationAPIRetrieveDocumentView(generics.RetrieveAPIView):
+    queryset = Application.objects.all()
+    serializer_class = ApplicationDocumentSerializer
+    permission_classes = [IsAuthenticated]
 
 
 class CategoryAPIListCreateView(generics.ListCreateAPIView):

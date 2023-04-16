@@ -2,7 +2,7 @@ from django.shortcuts import render
 from news.serializers import NewSerializer
 from rest_framework import generics
 from news.models import New
-from users.permissions import IsTeacherOrAdmin, IsAdminOrReadOnly, IsTeacherOrAdminOrReadOnly, IsStudent
+from users.permissions import *
 
 
 class NewAPIListCreateView(generics.ListCreateAPIView):

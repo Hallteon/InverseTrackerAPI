@@ -1,12 +1,12 @@
 from rest_framework import generics
 from users.permissions import *
-from courses.serializers import GroupSerializer, LessonSerializer, HomeworkSerializer, CourseSerializer
-from courses.models import Group, Lesson, Homework, Course
+from courses.serializers import *
+from courses.models import *
 from rest_framework.permissions import IsAuthenticated
 
 
 class CourseAPIMeStudentListView(generics.ListAPIView):
-    serializer_class = CourseSerializer
+    serializer_class = CourseGetSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self, *args, **kwargs):
@@ -22,7 +22,7 @@ class CourseAPIMeStudentListView(generics.ListAPIView):
 
 
 class CourseAPIMeTeacherListView(generics.ListAPIView):
-    serializer_class = CourseSerializer
+    serializer_class = CourseGetSerializer
     permission_classes = [IsTeacherOrAdmin]
 
     def get_queryset(self, *args, **kwargs):

@@ -28,13 +28,29 @@ class ScheduleSerializer(serializers.ModelSerializer):
         fields = ('id', 'day', 'time')
 
 
-class ApplicationSerializer(serializers.ModelSerializer):
+class ApplicationGetSerializer(serializers.ModelSerializer):
+    student = CustomUserSerializer(required=False)
+
+    class Meta:
+        model = Application
+        fields = ('id', 'student', 'status')
+
+
+class ApplicationPostSerializer(serializers.ModelSerializer):
     student = CustomUserSerializer(required=False)
     document = PDFBase64File(represent_in_base64=True)
 
     class Meta:
         model = Application
         fields = ('id', 'student', 'document', 'status')
+
+
+class ApplicationDocumentSerializer(serializers.ModelSerializer):
+    document = PDFBase64File(represent_in_base64=True)
+
+    class Meta:
+        model = Course
+        fields = ('id', 'document')
 
 
 class HomeworkSerializer(serializers.ModelSerializer):
@@ -57,7 +73,7 @@ class GroupSerializer(serializers.ModelSerializer):
     schedule = ScheduleSerializer(many=True, required=False)
     members = CustomUserSerializer(many=True, required=False)
     lessons = LessonSerializer(many=True, required=False)
-    applications = ApplicationSerializer(many=True, required=False)
+    applications = ApplicationGetSerializer(many=True, required=False)
 
     class Meta:
         model = Group
@@ -71,7 +87,18 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ('id', 'name')
 
 
-class CourseSerializer(serializers.ModelSerializer):
+class CourseGetSerializer(serializers.ModelSerializer):
+    teacher = CustomUserSerializer()
+    groups = GroupSerializer(many=True, required=False)
+    category = CategorySerializer()
+    image = Base64ImageField(represent_in_base64=True)
+
+    class Meta:
+        model = Course
+        fields = ('id', 'name', 'description', 'teacher', 'groups', 'category', 'place', 'image',)
+
+
+class CoursePostSerializer(serializers.ModelSerializer):
     teacher = CustomUserSerializer()
     groups = GroupSerializer(many=True, required=False)
     category = CategorySerializer()
@@ -87,3 +114,11 @@ class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
         fields = ('id', 'name', 'description', 'teacher', 'groups', 'category', 'place', 'image', 'document')
+
+
+class CourseDocumentSerializer(serializers.ModelSerializer):
+    document = PDFBase64File(represent_in_base64=True)
+
+    class Meta:
+        model = Course
+        fields = ('id', 'document')

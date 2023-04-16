@@ -1,5 +1,5 @@
 from django.contrib import admin
-from courses.models import Course, Application, Homework, Schedule, Category, Group, Lesson
+from courses.models import *
 from courses.forms import ScheduleForm
 
 
